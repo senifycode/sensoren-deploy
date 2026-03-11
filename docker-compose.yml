@@ -1,0 +1,142 @@
+version: '3.8'
+
+networks:
+  sensoren-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  # ==========================================
+  # WebSocket Service (Socket.IO + gRPC)
+  # ==========================================
+  websocket-service:
+    build:
+      context: ./websocket-service
+      dockerfile: Dockerfile
+    container_name: websocket-service
+    restart: unless-stopped
+    networks:
+      sensoren-network:
+        ipv4_address: 172.20.0.11
+    expose:
+      - "8091"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - WSS_RPC_PORT=8091
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # Broker Service (MQTT + gRPC)
+  # ==========================================
+  broker-service:
+    build:
+      context: ./broker-service
+      dockerfile: Dockerfile
+    container_name: broker-service
+    restart: unless-stopped
+    networks:
+      sensoren-network:
+        ipv4_address: 172.20.0.10
+    ports:
+      - "1883:1883"   # MQTT (optional, for testing)
+      - "8883:8883"   # MQTT over TLS (IoT devices)
+    expose:
+      - "8081"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - BROKER_RPC_PORT=8081
+      - WSS_RPC_HOST=172.20.0.11
+      - WSS_RPC_PORT=8091
+    volumes:
+      - ./volumes/ssl:/ssl:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - websocket-service
+
+  # ==========================================
+  # Backup Service (gRPC)
+  # ==========================================
+  backup-service:
+    build:
+      context: ./backup-service
+      dockerfile: Dockerfile
+    container_name: backup-service
+    restart: unless-stopped
+    networks:
+      sensoren-network:
+        ipv4_address: 172.20.0.12
+    expose:
+      - "8101"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - BACKUP_RPC_PORT=8101
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    volumes:
+      - ./volumes/backups:/backups
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8101/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # Main Service (SvelteKit)
+  # ==========================================
+  sensoren-server:
+    build:
+      context: ./sensoren-server
+      dockerfile: DockerfileBUN
+    container_name: sensoren-server
+    restart: unless-stopped
+    networks:
+      sensoren-network:
+        ipv4_address: 172.20.0.20
+    ports:
+      - "${SERVICE_PORT:-80}:3000"
+    environment:
+      - SERVICE_FQDN_SENIFY_3000
+      - ORIGIN=${ORIGIN:-https://sensore.senify.de}
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+      - IMG_STOREAGE_PATH=/images
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_PORT=${MQTT_PORT:-8883}
+      - PLANE_API_KEY=${PLANE_API_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # gRPC endpoints (Docker network IPs)
+      - BROKER_RPC_HOST=172.20.0.10
+      - BROKER_RPC_PORT=8081
+      - WSS_RPC_HOST=172.20.0.11
+      - WSS_RPC_PORT=8091
+      - BACKUP_RPC_HOST=172.20.0.12
+      - BACKUP_RPC_PORT=8101
+    volumes:
+      - ./volumes/images:/images
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    depends_on:
+      - broker-service
+      - websocket-service
+      - backup-service
+
+volumes:
+  images:
+  backups:

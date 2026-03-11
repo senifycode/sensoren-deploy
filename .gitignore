@@ -1,0 +1,26 @@
+# Environment variables
+.env
+
+# Volume data (local development only - in production Coolify manages these)
+volumes/images/*
+volumes/ssl/*
+volumes/backups/*
+
+# Keep the volume directories but ignore their contents
+!volumes/images/.gitkeep
+!volumes/ssl/.gitkeep
+!volumes/backups/.gitkeep
+
+# Docker
+.dockerignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
