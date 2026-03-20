@@ -1,0 +1,15 @@
+FROM oven/bun:1
+WORKDIR /app
+
+# Install dependencies for shared-utils/db
+COPY ./shared-utils/db/package.json ./shared-utils/db/package.json
+RUN cd shared-utils/db && bun install
+
+# Copy prisma schema + migrations + seed
+COPY ./shared-utils/db/prisma ./shared-utils/db/prisma
+
+# Generate Prisma client (output: ../generated/client relative to prisma dir)
+RUN cd shared-utils/db && bunx prisma generate
+
+# Run migrations then seed on container start
+ENTRYPOINT ["/bin/sh", "-c", "cd /app/shared-utils/db && bunx prisma migrate deploy && bun run ./prisma/seed.ts"]

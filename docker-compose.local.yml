@@ -1,0 +1,172 @@
+version: '3.8'
+
+# Local development / feature testing compose
+# Usage: docker compose -f docker-compose.local.yml up --build
+#
+# Default test credentials (hardcoded for convenience):
+#   DB:    mysql://prisma:Prisma123!@db:3306/senify
+#   App:   http://localhost:3000
+#   MQTT:  localhost:1883  password: test1234
+#   Login: julian.haussmann@senify.de / (see seed.ts for hashed pw)
+
+networks:
+  sensoren-network:
+    driver: bridge
+
+services:
+  # ==========================================
+  # MySQL Database
+  # ==========================================
+  db:
+    image: mysql:8.0
+    container_name: senify-db
+    restart: unless-stopped
+    networks:
+      - sensoren-network
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: senify
+      MYSQL_USER: prisma
+      MYSQL_PASSWORD: Prisma123!
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uprisma", "-pPrisma123!"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ==========================================
+  # DB Init: run migrations + seed
+  # ==========================================
+  db-init:
+    build:
+      context: ..
+      dockerfile: sensoren-deploy/Dockerfile.db-init
+    container_name: senify-db-init
+    restart: on-failure
+    networks:
+      - sensoren-network
+    environment:
+      DATABASE_URL: mysql://prisma:Prisma123!@db:3306/senify
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ==========================================
+  # WebSocket Service (Socket.IO + gRPC)
+  # ==========================================
+  websocket-service:
+    build:
+      context: ../websocket-service
+      dockerfile: Dockerfile
+    container_name: websocket-service
+    restart: unless-stopped
+    networks:
+      - sensoren-network
+    ports:
+      - "8091:8091"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
+      - WSS_RPC_PORT=8091
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  # ==========================================
+  # Broker Service (MQTT + gRPC)
+  # ==========================================
+  broker-service:
+    build:
+      context: ../broker-service
+      dockerfile: Dockerfile
+    container_name: broker-service
+    restart: unless-stopped
+    networks:
+      - sensoren-network
+    ports:
+      - "1883:1883"   # MQTT plaintext
+      - "8883:8883"   # MQTT over TLS
+      - "8081:8081"   # gRPC
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
+      - MQTT_PASSWORD=test1234
+      - BROKER_RPC_PORT=8081
+      - WSS_RPC_HOST=websocket-service
+      - WSS_RPC_PORT=8091
+    volumes:
+      - ./volumes/ssl:/ssl:ro
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      websocket-service:
+        condition: service_started
+
+  # ==========================================
+  # Backup Service (gRPC)
+  # ==========================================
+  backup-service:
+    build:
+      context: ../backup-service
+      dockerfile: Dockerfile
+    container_name: backup-service
+    restart: unless-stopped
+    networks:
+      - sensoren-network
+    ports:
+      - "8101:8101"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
+      - BACKUP_RPC_PORT=8101
+      - ENCRYPTION_KEY=localtestkey1234567890123456789012
+    volumes:
+      - ./volumes/backups:/backups
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  # ==========================================
+  # Main Service (SvelteKit)
+  # ==========================================
+  sensoren-server:
+    build:
+      context: ../Sensoren-Server
+      dockerfile: DockerfileBUN
+    container_name: sensoren-server
+    restart: unless-stopped
+    networks:
+      - sensoren-network
+    ports:
+      - "3000:3000"
+    environment:
+      - ORIGIN=http://localhost:3000
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
+      - BCRYPT_ROUNDS=10
+      - IMG_STOREAGE_PATH=/images
+      - MQTT_PASSWORD=test1234
+      - MQTT_PORT=1883
+      - PLANE_API_KEY=
+      - ENCRYPTION_KEY=localtestkey1234567890123456789012
+      # gRPC endpoints (Docker service names)
+      - BROKER_RPC_HOST=broker-service
+      - BROKER_RPC_PORT=8081
+      - WSS_RPC_HOST=websocket-service
+      - WSS_RPC_PORT=8091
+      - BACKUP_RPC_HOST=backup-service
+      - BACKUP_RPC_PORT=8101
+    volumes:
+      - ./volumes/images:/images
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      broker-service:
+        condition: service_started
+      websocket-service:
+        condition: service_started
+      backup-service:
+        condition: service_started

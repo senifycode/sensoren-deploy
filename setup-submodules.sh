@@ -7,7 +7,7 @@ echo "🚀 Setting up Sensoren-Deploy submodules..."
 echo ""
 
 # GitHub organization/user - UPDATE THIS!
-GITHUB_ORG="YOUR_GITHUB_USERNAME_OR_ORG"
+GITHUB_ORG="senifycode"
 
 # Check if we're in a git repository
 if [ ! -d .git ]; then
