@@ -55,8 +55,24 @@ else
 fi
 
 echo ""
-echo "📥 Initializing nested submodules (shared-utils)..."
+echo "📥 Initializing and updating all submodules to latest main..."
 git submodule update --init --recursive
+
+echo ""
+echo "🔄 Pulling latest main branch for each submodule..."
+git submodule foreach '
+    git checkout main 2>/dev/null || git checkout master 2>/dev/null
+    git pull origin $(git rev-parse --abbrev-ref HEAD)
+    echo "✅ $name updated to $(git rev-parse --short HEAD)"
+'
+
+echo ""
+echo "📥 Updating nested submodules (shared-utils) to latest..."
+git submodule foreach --recursive '
+    if [ "$(git rev-parse --abbrev-ref HEAD)" != "HEAD" ]; then
+        git pull origin $(git rev-parse --abbrev-ref HEAD) 2>/dev/null || true
+    fi
+'
 
 echo ""
 echo "✅ Submodule setup complete!"
@@ -66,4 +82,4 @@ echo "1. Review .gitmodules file"
 echo "2. Commit the changes: git add . && git commit -m 'Add service submodules'"
 echo "3. Push to remote: git push origin main"
 echo ""
-echo "To update all submodules to latest: git submodule update --remote --merge"
+echo "To update all submodules to latest again: git submodule foreach 'git pull origin main'"
