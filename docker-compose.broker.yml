@@ -15,7 +15,7 @@ services:
     networks:
       - sensoren-network
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root1234
       MYSQL_DATABASE: senify
