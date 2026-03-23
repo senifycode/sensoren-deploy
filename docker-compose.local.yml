@@ -30,6 +30,8 @@ services:
       MYSQL_DATABASE: senify
       MYSQL_USER: prisma
       MYSQL_PASSWORD: Prisma123!
+    volumes:
+      - ./volumes/db-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uprisma", "-pPrisma123!"]
       interval: 10s
