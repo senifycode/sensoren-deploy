@@ -6,12 +6,14 @@ volumes/images/*
 volumes/ssl/*
 volumes/backups/*
 volumes/db-data/*
+volumes/broker-data/*
 
 # Keep the volume directories but ignore their contents
 !volumes/images/.gitkeep
 !volumes/ssl/.gitkeep
 !volumes/backups/.gitkeep
 !volumes/db-data/.gitkeep
+!volumes/broker-data/.gitkeep
 
 # Docker
 .dockerignore

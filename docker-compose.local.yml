@@ -101,6 +101,7 @@ services:
       - WSS_RPC_PORT=8091
     volumes:
       - ./volumes/ssl:/ssl:ro
+      - ./volumes/broker-data:/data
     depends_on:
       db-init:
         condition: service_completed_successfully
