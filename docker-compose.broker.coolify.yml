@@ -19,7 +19,7 @@ services:
 
     db-init:
         build:
-            context: ..
+            context: .
             dockerfile: sensoren-deploy/Dockerfile.db-init
         container_name: senify-db-init
         restart: on-failure
@@ -31,7 +31,7 @@ services:
 
     broker-service:
         build:
-            context: ../broker-service
+            context: ./broker-service
             dockerfile: Dockerfile
         container_name: broker-service
         restart: unless-stopped
