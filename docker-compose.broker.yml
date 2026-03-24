@@ -61,6 +61,7 @@ services:
       - BROKER_RPC_PORT=8081
       - WSS_RPC_HOST=localhost
       - WSS_RPC_PORT=8091
+      - ENCRYPTION_KEY=localtestkey1234567890123456789012
     volumes:
       - ./volumes/ssl:/ssl:ro
     depends_on:

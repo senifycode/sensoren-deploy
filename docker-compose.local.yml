@@ -96,6 +96,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
       - MQTT_PASSWORD=test1234
+      - ENCRYPTION_KEY=localtestkey1234567890123456789012
       - BROKER_RPC_PORT=8081
       - WSS_RPC_HOST=websocket-service
       - WSS_RPC_PORT=8091

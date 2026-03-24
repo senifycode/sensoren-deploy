@@ -1,0 +1,54 @@
+services:
+    db:
+        image: mysql:8.0
+        container_name: senify-db
+        restart: unless-stopped
+        ports:
+            - '3307:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: root1234
+            MYSQL_DATABASE: senify
+            MYSQL_USER: prisma
+            MYSQL_PASSWORD: Prisma123!
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uprisma', '-pPrisma123!']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 30s
+
+    db-init:
+        build:
+            context: ..
+            dockerfile: sensoren-deploy/Dockerfile.db-init
+        container_name: senify-db-init
+        restart: on-failure
+        environment:
+            DATABASE_URL: mysql://prisma:Prisma123!@db:3306/senify
+        depends_on:
+            db:
+                condition: service_healthy
+
+    broker-service:
+        build:
+            context: ../broker-service
+            dockerfile: Dockerfile
+        container_name: broker-service
+        restart: unless-stopped
+        ports:
+            - '1883:1883'
+            - '8883:8883'
+            - '8081:8081'
+        environment:
+            - NODE_ENV=development
+            - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
+            - MQTT_PASSWORD=test1234
+            - BROKER_RPC_PORT=8081
+            - WSS_RPC_HOST=localhost
+            - WSS_RPC_PORT=8091
+            - ENCRYPTION_KEY=localtestkey1234567890123456789012
+        volumes:
+            - ./volumes/ssl:/ssl:ro
+        depends_on:
+            db-init:
+                condition: service_completed_successfully
