@@ -20,7 +20,7 @@ services:
     db-init:
         build:
             context: .
-            dockerfile: sensoren-deploy/Dockerfile.db-init
+            dockerfile: Dockerfile.db-init
         container_name: senify-db-init
         restart: on-failure
         environment:
