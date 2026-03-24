@@ -10,3 +10,6 @@
 [submodule "backup-service"]
 	path = backup-service
 	url = ../backup-service.git
+[submodule "shared-utils"]
+	path = shared-utils
+	url = ../shared-utils.git
