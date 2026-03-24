@@ -1,12 +1,12 @@
 [submodule "sensoren-server"]
 	path = sensoren-server
-	url = ../Sensoren-Server.git
+	url = git@github.com:senifycode/Sensoren-Server.git
 [submodule "broker-service"]
 	path = broker-service
-	url = ../broker-service.git
+	url = git@github.com:senifycode/broker-service.git
 [submodule "websocket-service"]
 	path = websocket-service
-	url = ../websocket-service.git
+	url = git@github.com:senifycode/websocket-service.git
 [submodule "backup-service"]
 	path = backup-service
-	url = ../backup-service.git
+	url = git@github.com:senifycode/backup-service.git
