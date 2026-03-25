@@ -30,6 +30,7 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+        exclude_from_hc: true
         networks:
             - senify-net
 
@@ -51,6 +52,7 @@ services:
         depends_on:
             db-init:
                 condition: service_completed_successfully
+        exclude_from_hc: true
         networks:
             - senify-net
 
