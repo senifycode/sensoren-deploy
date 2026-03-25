@@ -16,6 +16,8 @@ services:
             timeout: 5s
             retries: 10
             start_period: 30s
+        networks:
+            - senify-net
 
     db-init:
         build:
@@ -28,6 +30,8 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+        networks:
+            - senify-net
 
     broker-service:
         build:
@@ -52,3 +56,9 @@ services:
         depends_on:
             db-init:
                 condition: service_completed_successfully
+        networks:
+            - senify-net
+
+networks:
+    senify-net:
+        driver: bridge
