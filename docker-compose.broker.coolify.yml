@@ -47,6 +47,7 @@ services:
             - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
             - MQTT_PASSWORD=test1234
             - ENCRYPTION_KEY=localtestkey1234567890123456789012
+            - SINGLE_MODE=true
         volumes:
             - ./volumes/ssl:/ssl:ro
         depends_on:
