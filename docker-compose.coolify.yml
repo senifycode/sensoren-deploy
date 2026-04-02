@@ -10,6 +10,8 @@ services:
             MYSQL_DATABASE: ${MYSQL_DATABASE:-senify}
             MYSQL_USER: ${MYSQL_USER:-prisma}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        volumes:
+            - db-data:/var/lib/mysql
         healthcheck:
             test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u${MYSQL_USER:-prisma}', '-p${MYSQL_PASSWORD}']
             interval: 10s
