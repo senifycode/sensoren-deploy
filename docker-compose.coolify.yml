@@ -43,6 +43,7 @@ services:
         container_name: websocket-service
         restart: unless-stopped
         environment:
+            - SERVICE_FQDN_SENIFY_8091
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
             - WSS_RPC_PORT=8091
