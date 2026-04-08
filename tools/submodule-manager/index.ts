@@ -9,7 +9,9 @@ import {
 	showBranchMenu,
 	showCommitMenu,
 	showSuccess,
-	showError
+	showError,
+	showUpdateAllMenu,
+	showCommitPrompt
 } from './src/ui.js';
 import {
 	findDeployRoot,
@@ -17,7 +19,10 @@ import {
 	fetchSubmodule,
 	getBranches,
 	getCommits,
-	checkoutCommit
+	checkoutCommit,
+	getCurrentBranch,
+	addAndCommit,
+	pushToRemote
 } from './src/git-operations.js';
 import { DEFAULT_COMMIT_LIMIT } from './src/constants.js';
 
@@ -47,6 +52,121 @@ async function main() {
 		if (isCancel(selectedName) || selectedName === 'exit') {
 			cancel('Operation cancelled');
 			process.exit(0);
+		}
+
+		if (selectedName === 'update-all') {
+			const selectedSubmodules = await showUpdateAllMenu(submodules);
+
+			if (isCancel(selectedSubmodules) || selectedSubmodules.length === 0) {
+				continue;
+			}
+
+			let successCount = 0;
+			let failCount = 0;
+
+			for (const submoduleName of selectedSubmodules) {
+				const submodule = submodules.find((s) => s.name === submoduleName);
+				if (!submodule) continue;
+
+				const submodulePath = join(deployRoot, submodule.path);
+				const s = spinner();
+
+				s.start(`${submodule.name}: Fetching latest...`);
+
+				const fetchResult = await fetchSubmodule(submodulePath);
+				if (!fetchResult.success) {
+					s.stop(pc.red(`${submodule.name}: Failed to fetch`));
+					failCount++;
+					continue;
+				}
+
+				const currentBranch = await getCurrentBranch(submodulePath);
+				if (!currentBranch) {
+					s.stop(pc.red(`${submodule.name}: Could not detect branch`));
+					failCount++;
+					continue;
+				}
+
+				s.message(`${submodule.name}: Getting latest commit from ${currentBranch}...`);
+
+				const commits = await getCommits(submodulePath, currentBranch, 1);
+				if (commits.length === 0) {
+					s.stop(pc.red(`${submodule.name}: No commits found`));
+					failCount++;
+					continue;
+				}
+
+				const latestCommit = commits[0];
+				s.message(`${submodule.name}: Checking out ${latestCommit.shortHash}...`);
+
+				const checkoutResult = await checkoutCommit(submodulePath, latestCommit.hash);
+
+				if (checkoutResult.success) {
+					s.stop(pc.green(`✓ ${submodule.name}: ${latestCommit.shortHash} - ${latestCommit.message}`));
+					successCount++;
+				} else {
+					s.stop(pc.red(`✗ ${submodule.name}: Checkout failed`));
+					failCount++;
+				}
+			}
+
+			console.log();
+			if (failCount === 0) {
+				showSuccess(
+					`All ${successCount} submodule${successCount > 1 ? 's' : ''} updated successfully!`,
+					'The parent deploy repo now has uncommitted changes.'
+				);
+			} else {
+				showError(
+					`Completed with ${successCount} success, ${failCount} failed`,
+					'Check the errors above for details.'
+				);
+			}
+
+			if (successCount > 0) {
+				const commitPrompt = await showCommitPrompt();
+
+				if (commitPrompt.shouldCommit) {
+					const s = spinner();
+					s.start('Committing changes...');
+
+					const updatedSubmodules = selectedSubmodules.filter((name) =>
+						submodules.some((sub) => sub.name === name)
+					);
+
+					const commitResult = await addAndCommit(
+						deployRoot,
+						updatedSubmodules,
+						commitPrompt.message
+					);
+
+					if (commitResult.success) {
+						s.stop(pc.green('✓ Changes committed'));
+
+						const s2 = spinner();
+						s2.start('Pushing to remote...');
+
+						const pushResult = await pushToRemote(deployRoot);
+
+						if (pushResult.success) {
+							s2.stop(pc.green('✓ Pushed to remote'));
+							showSuccess(
+								'Deployment complete!',
+								`Updated ${successCount} submodule${successCount > 1 ? 's' : ''}, committed and pushed.`
+							);
+						} else {
+							s2.stop(pc.red('✗ Push failed'));
+							showError('Failed to push to remote', pushResult.error);
+						}
+					} else {
+						s.stop(pc.red('✗ Commit failed'));
+						showError('Failed to commit changes', commitResult.error);
+					}
+				}
+			}
+
+			submodules = await parseGitmodules(deployRoot);
+			continue;
 		}
 
 		const submodule = submodules.find((s) => s.name === selectedName);

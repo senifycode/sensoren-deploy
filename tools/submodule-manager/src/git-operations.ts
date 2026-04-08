@@ -223,3 +223,69 @@ export async function checkoutCommit(
 ): Promise<GitResult> {
 	return executeGitCommand('git', ['checkout', commitHash], submodulePath);
 }
+
+export async function getCurrentBranch(submodulePath: string): Promise<string | null> {
+	const result = await executeGitCommand(
+		'git',
+		['rev-parse', '--abbrev-ref', 'HEAD'],
+		submodulePath
+	);
+
+	if (result.success && result.output && result.output !== 'HEAD') {
+		return result.output.trim();
+	}
+
+	const symbolicResult = await executeGitCommand(
+		'git',
+		['symbolic-ref', '-q', 'HEAD'],
+		submodulePath
+	);
+
+	if (symbolicResult.success && symbolicResult.output) {
+		const match = symbolicResult.output.match(/refs\/heads\/(.+)/);
+		if (match) {
+			return match[1];
+		}
+	}
+
+	const remoteResult = await executeGitCommand(
+		'git',
+		['branch', '-r', '--contains', 'HEAD'],
+		submodulePath
+	);
+
+	if (remoteResult.success && remoteResult.output) {
+		const lines = remoteResult.output.split('\n').filter((l) => l.trim());
+		if (lines.length > 0) {
+			const firstBranch = lines[0].replace(/^\s+/, '');
+			return firstBranch;
+		}
+	}
+
+	return 'remotes/origin/main';
+}
+
+export async function addAndCommit(
+	deployRoot: string,
+	submoduleNames: string[],
+	message: string
+): Promise<GitResult> {
+	for (const name of submoduleNames) {
+		const addResult = await executeGitCommand('git', ['add', name], deployRoot);
+		if (!addResult.success) {
+			return { success: false, error: `Failed to add ${name}: ${addResult.error}` };
+		}
+	}
+
+	const commitResult = await executeGitCommand(
+		'git',
+		['commit', '-m', message],
+		deployRoot
+	);
+
+	return commitResult;
+}
+
+export async function pushToRemote(deployRoot: string): Promise<GitResult> {
+	return executeGitCommand('git', ['push'], deployRoot);
+}

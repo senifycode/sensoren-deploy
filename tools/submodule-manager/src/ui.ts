@@ -1,4 +1,4 @@
-import { intro, select, isCancel, cancel, note } from '@clack/prompts';
+import { intro, select, multiselect, isCancel, cancel, note, confirm, text } from '@clack/prompts';
 import pc from 'picocolors';
 import type { Submodule, Branch, Commit } from './types.js';
 import { SUBMODULE_DISPLAY } from './constants.js';
@@ -19,6 +19,12 @@ export async function showMainMenu(submodules: Submodule[]): Promise<string | sy
 			label: `${display.emoji} ${display.name}`,
 			hint: sub.currentShortHash ? `Current: ${sub.currentShortHash}` : ''
 		};
+	});
+
+	options.unshift({
+		value: 'update-all',
+		label: pc.green('🚀 Update multiple to latest'),
+		hint: 'Quick update to HEAD of current branch'
 	});
 
 	options.push({
@@ -137,4 +143,60 @@ export function showError(message: string, details?: string): void {
 	console.log();
 	note(pc.red(details || 'An error occurred'), pc.red(message));
 	console.log();
+}
+
+export async function showUpdateAllMenu(submodules: Submodule[]): Promise<string[] | symbol> {
+	const options = submodules.map((sub) => {
+		const display = SUBMODULE_DISPLAY[sub.name as keyof typeof SUBMODULE_DISPLAY] || {
+			emoji: '📦',
+			name: sub.name
+		};
+
+		return {
+			value: sub.name,
+			label: `${display.emoji} ${display.name}`,
+			hint: sub.currentShortHash ? `Current: ${sub.currentShortHash}` : ''
+		};
+	});
+
+	const selected = await multiselect({
+		message: 'Select submodules to update to latest (space to select, enter to confirm):',
+		options,
+		required: false
+	});
+
+	if (isCancel(selected)) {
+		cancel('Operation cancelled');
+		process.exit(0);
+	}
+
+	return selected as string[];
+}
+
+export async function showCommitPrompt(): Promise<{ shouldCommit: boolean; message: string }> {
+	const shouldCommit = await confirm({
+		message: 'Commit and push changes to deploy repo?',
+		initialValue: true
+	});
+
+	if (isCancel(shouldCommit) || !shouldCommit) {
+		return { shouldCommit: false, message: '' };
+	}
+
+	const message = await text({
+		message: 'Enter commit message:',
+		placeholder: 'upd',
+		defaultValue: 'upd',
+		validate(value) {
+			if (!value || value.trim().length === 0) {
+				return 'Commit message cannot be empty';
+			}
+		}
+	});
+
+	if (isCancel(message)) {
+		return { shouldCommit: false, message: '' };
+	}
+
+	return { shouldCommit: true, message: message as string };
 }
