@@ -46,6 +46,7 @@ services:
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
             - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+            - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:8091/health']
             interval: 30s
@@ -132,8 +133,8 @@ services:
             - MQTT_PORT=${MQTT_PORT:-8883}
             - PLANE_API_KEY=${PLANE_API_KEY}
             - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-            - WSS_SERVICE_URL=${WSS_SERVICE_URL:-websocket-service:8081}
             - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
+            - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
             - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
             - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
