@@ -162,33 +162,46 @@ export async function getCommits(
 	branch: string,
 	limit: number = 50
 ): Promise<Commit[]> {
-	const result = await executeGitCommand(
+	const hashResult = await executeGitCommand(
 		'git',
-		['log', branch, '--format=%H|%h|%an|%ar|%s', `-n${limit}`],
+		['log', branch, '--oneline', `-n${limit}`],
 		submodulePath
 	);
 
-	if (!result.success) {
-		console.error('Git log failed:', result.error);
-		return [];
-	}
-
-	if (!result.output) {
-		console.error('No output from git log');
+	if (!hashResult.success || !hashResult.output) {
 		return [];
 	}
 
 	const commits: Commit[] = [];
-	const lines = result.output.split('\n').filter((l) => l.trim());
+	const lines = hashResult.output.split('\n').filter((l) => l.trim());
 
 	for (const line of lines) {
-		const parts = line.split('|');
-		if (parts.length >= 5) {
-			const [hash, shortHash, author, date, ...messageParts] = parts;
-			let message = messageParts.join('|');
+		const match = line.match(/^([a-f0-9]+)\s+(.+)$/);
+		if (match) {
+			const shortHash = match[1];
+			let message = match[2];
 
 			if (message.length > 60) {
 				message = message.substring(0, 57) + '...';
+			}
+
+			const detailResult = await executeGitCommand(
+				'git',
+				['show', '-s', '--format=%H %an %ar', shortHash],
+				submodulePath
+			);
+
+			let hash = shortHash;
+			let author = 'Unknown';
+			let date = '';
+
+			if (detailResult.success && detailResult.output) {
+				const parts = detailResult.output.trim().split(' ');
+				if (parts.length >= 3) {
+					hash = parts[0];
+					author = parts.slice(1, -2).join(' ') || 'Unknown';
+					date = parts.slice(-2).join(' ');
+				}
 			}
 
 			commits.push({

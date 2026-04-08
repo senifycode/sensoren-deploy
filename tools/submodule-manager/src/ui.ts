@@ -90,11 +90,23 @@ export async function showCommitMenu(
 	console.log(pc.cyan(`${display.emoji} ${display.name} → ${branchName}`));
 	console.log();
 
-	const options = commits.map((commit) => ({
-		value: commit.hash,
-		label: `${commit.shortHash} - ${commit.message}`,
-		hint: `${commit.author}, ${commit.date}`
-	}));
+	const options = [];
+
+	if (commits.length > 0) {
+		options.push({
+			value: commits[0].hash,
+			label: pc.green(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest)`),
+			hint: `${commits[0].author}, ${commits[0].date}`
+		});
+
+		if (commits.length > 1) {
+			options.push(...commits.slice(1).map((commit) => ({
+				value: commit.hash,
+				label: `${commit.shortHash} - ${commit.message}`,
+				hint: `${commit.author}, ${commit.date}`
+			})));
+		}
+	}
 
 	options.push({
 		value: 'back',
