@@ -73,8 +73,7 @@ services:
             - DATABASE_URL=${DATABASE_URL}
             - MQTT_PASSWORD=${MQTT_PASSWORD}
             - BROKER_RPC_PORT=8081
-            - WSS_RPC_HOST=websocket-service
-            - WSS_RPC_PORT=8091
+            - WSS_RPC_URL=websocket-service:8091
         volumes:
             - ./volumes/ssl:/ssl:ro
         healthcheck:
@@ -133,12 +132,9 @@ services:
             - MQTT_PORT=${MQTT_PORT:-8883}
             - PLANE_API_KEY=${PLANE_API_KEY}
             - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-            - BROKER_RPC_HOST=broker-service
-            - BROKER_RPC_PORT=8081
-            - WSS_RPC_HOST=websocket-service
-            - WSS_RPC_PORT=8091
-            - BACKUP_RPC_HOST=backup-service
-            - BACKUP_RPC_PORT=8101
+            - BROKER_RPC_URL=broker-service:8081
+            - WSS_RPC_URL=websocket-service:8091
+            - BACKUP_RPC_URL=backup-service:8101
         volumes:
             - ./volumes/images:/images
         healthcheck:
