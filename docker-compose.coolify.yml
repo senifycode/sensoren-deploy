@@ -46,7 +46,7 @@ services:
             - SERVICE_FQDN_SENIFY_8091
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
-            - WSS_RPC_PORT=8091
+            - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:8091/health']
             interval: 30s
@@ -72,8 +72,9 @@ services:
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
             - MQTT_PASSWORD=${MQTT_PASSWORD}
-            - BROKER_RPC_PORT=8081
-            - WSS_RPC_URL=websocket-service:8091
+            - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
+            - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+            - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
             - ./volumes/ssl:/ssl:ro
         healthcheck:
@@ -99,8 +100,8 @@ services:
         environment:
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
-            - BACKUP_RPC_PORT=8101
             - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+            - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
             - ./volumes/backups:/backups
         healthcheck:
@@ -132,9 +133,9 @@ services:
             - MQTT_PORT=${MQTT_PORT:-8883}
             - PLANE_API_KEY=${PLANE_API_KEY}
             - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-            - BROKER_RPC_URL=broker-service:8081
-            - WSS_RPC_URL=websocket-service:8091
-            - BACKUP_RPC_URL=backup-service:8101
+            - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
+            - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+            - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
             - ./volumes/images:/images
         healthcheck:
