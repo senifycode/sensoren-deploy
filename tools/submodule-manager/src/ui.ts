@@ -85,7 +85,8 @@ export async function showBranchMenu(
 export async function showCommitMenu(
 	commits: Commit[],
 	submoduleName: string,
-	branchName: string
+	branchName: string,
+	currentCommit?: string
 ): Promise<string | symbol> {
 	const display = SUBMODULE_DISPLAY[submoduleName as keyof typeof SUBMODULE_DISPLAY] || {
 		emoji: '📦',
@@ -99,18 +100,27 @@ export async function showCommitMenu(
 	const options = [];
 
 	if (commits.length > 0) {
+		const isFirstCurrent = currentCommit && commits[0].hash.startsWith(currentCommit);
+
 		options.push({
 			value: commits[0].hash,
-			label: pc.green(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest)`),
+			label: isFirstCurrent
+				? pc.magenta(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest, Current)`)
+				: pc.green(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest)`),
 			hint: `${commits[0].author}, ${commits[0].date}`
 		});
 
 		if (commits.length > 1) {
-			options.push(...commits.slice(1).map((commit) => ({
-				value: commit.hash,
-				label: `${commit.shortHash} - ${commit.message}`,
-				hint: `${commit.author}, ${commit.date}`
-			})));
+			options.push(...commits.slice(1).map((commit) => {
+				const isCurrent = currentCommit && commit.hash.startsWith(currentCommit);
+				return {
+					value: commit.hash,
+					label: isCurrent
+						? pc.magenta(`${commit.shortHash} - ${commit.message} (Current)`)
+						: `${commit.shortHash} - ${commit.message}`,
+					hint: `${commit.author}, ${commit.date}`
+				};
+			}));
 		}
 	}
 

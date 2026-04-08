@@ -218,7 +218,8 @@ async function main() {
 				const selectedCommit = await showCommitMenu(
 					commits,
 					submodule.name,
-					selectedBranch as string
+					selectedBranch as string,
+					submodule.currentCommit
 				);
 
 				if (isCancel(selectedCommit) || selectedCommit === 'back') {
