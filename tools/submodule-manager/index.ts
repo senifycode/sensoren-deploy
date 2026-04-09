@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { isCancel, cancel, spinner } from '@clack/prompts';
 import pc from 'picocolors';

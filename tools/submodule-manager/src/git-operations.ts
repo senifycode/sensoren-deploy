@@ -1,11 +1,11 @@
 import { spawn } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, parse } from 'path';
 import type { Submodule, Branch, Commit, GitResult } from './types.js';
 
 export function findDeployRoot(startDir: string): string {
 	let currentDir = startDir;
-	const root = dirname(currentDir).split('\\')[0] || '/';
+	const root = parse(currentDir).root;
 
 	while (currentDir !== root) {
 		const gitmodulesPath = join(currentDir, '.gitmodules');

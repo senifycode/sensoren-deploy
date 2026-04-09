@@ -5,8 +5,8 @@
   "description": "Interactive CLI for managing Git submodule commits",
   "main": "index.ts",
   "scripts": {
-    "dev": "bun run index.ts",
-    "start": "bun run index.ts"
+    "dev": "node --import tsx index.ts",
+    "start": "node --import tsx index.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   }
 }
