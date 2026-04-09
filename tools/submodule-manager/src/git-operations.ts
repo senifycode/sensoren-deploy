@@ -187,7 +187,7 @@ export async function getCommits(
 
 			const detailResult = await executeGitCommand(
 				'git',
-				['show', '-s', '--format=%H %an %ar', shortHash],
+				['show', '-s', '--format=%H|%an|%ar', shortHash],
 				submodulePath
 			);
 
@@ -196,11 +196,12 @@ export async function getCommits(
 			let date = '';
 
 			if (detailResult.success && detailResult.output) {
-				const parts = detailResult.output.trim().split(' ');
-				if (parts.length >= 3) {
+				const firstLine = detailResult.output.trim().split('\n')[0];
+				const parts = firstLine.split('|');
+				if (parts.length === 3) {
 					hash = parts[0];
-					author = parts.slice(1, -2).join(' ') || 'Unknown';
-					date = parts.slice(-2).join(' ');
+					author = parts[1] || 'Unknown';
+					date = parts[2];
 				}
 			}
 
@@ -288,4 +289,58 @@ export async function addAndCommit(
 
 export async function pushToRemote(deployRoot: string): Promise<GitResult> {
 	return executeGitCommand('git', ['push'], deployRoot);
+}
+
+export async function getNonSubmoduleChanges(
+	deployRoot: string,
+	submodules: Submodule[]
+): Promise<string[]> {
+	const statusResult = await executeGitCommand(
+		'git',
+		['status', '--porcelain'],
+		deployRoot
+	);
+
+	if (!statusResult.success || !statusResult.output) {
+		return [];
+	}
+
+	const submodulePaths = new Set(submodules.map((s) => s.path));
+	const nonSubmoduleChanges: string[] = [];
+
+	for (const line of statusResult.output.split('\n').filter((l) => l.trim())) {
+		const filePath = line.slice(3).trim();
+		if (!submodulePaths.has(filePath)) {
+			nonSubmoduleChanges.push(filePath);
+		}
+	}
+
+	return nonSubmoduleChanges;
+}
+
+export async function getChangedSubmodules(
+	deployRoot: string,
+	submodules: Submodule[]
+): Promise<string[]> {
+	const statusResult = await executeGitCommand(
+		'git',
+		['status', '--porcelain'],
+		deployRoot
+	);
+
+	if (!statusResult.success || !statusResult.output) {
+		return [];
+	}
+
+	const submodulePaths = new Set(submodules.map((s) => s.path));
+	const changed: string[] = [];
+
+	for (const line of statusResult.output.split('\n').filter((l) => l.trim())) {
+		const filePath = line.slice(3).trim();
+		if (submodulePaths.has(filePath)) {
+			changed.push(filePath);
+		}
+	}
+
+	return changed;
 }

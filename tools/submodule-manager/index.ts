@@ -22,7 +22,9 @@ import {
 	checkoutCommit,
 	getCurrentBranch,
 	addAndCommit,
-	pushToRemote
+	pushToRemote,
+	getNonSubmoduleChanges,
+	getChangedSubmodules
 } from './src/git-operations.js';
 import { DEFAULT_COMMIT_LIMIT } from './src/constants.js';
 
@@ -163,6 +165,56 @@ async function main() {
 						showError('Failed to commit changes', commitResult.error);
 					}
 				}
+			}
+
+			submodules = await parseGitmodules(deployRoot);
+			continue;
+		}
+
+		if (selectedName === 'quick-commit') {
+			const s = spinner();
+			s.start('Checking working tree...');
+
+			const nonSubmoduleChanges = await getNonSubmoduleChanges(deployRoot, submodules);
+
+			if (nonSubmoduleChanges.length > 0) {
+				s.stop(pc.red('Blocked: non-submodule changes detected'));
+				showError(
+					'Cannot commit — non-submodule changes present',
+					nonSubmoduleChanges.map((f) => `  ${f}`).join('\n')
+				);
+				continue;
+			}
+
+			const changedSubmodules = await getChangedSubmodules(deployRoot, submodules);
+
+			if (changedSubmodules.length === 0) {
+				s.stop(pc.yellow('No submodule changes to commit'));
+				continue;
+			}
+
+			s.stop(pc.green(`${changedSubmodules.length} submodule change(s) found`));
+
+			const commitResult = await addAndCommit(deployRoot, changedSubmodules, 'upd');
+
+			if (!commitResult.success) {
+				showError('Commit failed', commitResult.error);
+				continue;
+			}
+
+			const s2 = spinner();
+			s2.start('Pushing to remote...');
+			const pushResult = await pushToRemote(deployRoot);
+
+			if (pushResult.success) {
+				s2.stop(pc.green('✓ Pushed to remote'));
+				showSuccess(
+					'Done!',
+					`Committed & pushed ${changedSubmodules.length} submodule change(s) with message "upd".`
+				);
+			} else {
+				s2.stop(pc.red('✗ Push failed'));
+				showError('Failed to push to remote', pushResult.error);
 			}
 
 			submodules = await parseGitmodules(deployRoot);

@@ -22,6 +22,12 @@ export async function showMainMenu(submodules: Submodule[]): Promise<string | sy
 	});
 
 	options.unshift({
+		value: 'quick-commit',
+		label: pc.yellow('💾 Commit submodule changes'),
+		hint: 'Commit & push all submodule changes with message "upd"'
+	});
+
+	options.unshift({
 		value: 'update-all',
 		label: pc.green('🚀 Update multiple to latest'),
 		hint: 'Quick update to HEAD of current branch'
@@ -102,12 +108,17 @@ export async function showCommitMenu(
 	if (commits.length > 0) {
 		const isFirstCurrent = currentCommit && commits[0].hash.startsWith(currentCommit);
 
+		const formatHint = (author: string, date: string) => {
+			const parts = [author !== 'Unknown' ? author : null, date || null].filter(Boolean);
+			return parts.join(', ');
+		};
+
 		options.push({
 			value: commits[0].hash,
 			label: isFirstCurrent
 				? pc.magenta(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest, Current)`)
 				: pc.green(`✨ ${commits[0].shortHash} - ${commits[0].message} (Latest)`),
-			hint: `${commits[0].author}, ${commits[0].date}`
+			hint: formatHint(commits[0].author, commits[0].date)
 		});
 
 		if (commits.length > 1) {
@@ -118,7 +129,7 @@ export async function showCommitMenu(
 					label: isCurrent
 						? pc.magenta(`${commit.shortHash} - ${commit.message} (Current)`)
 						: `${commit.shortHash} - ${commit.message}`,
-					hint: `${commit.author}, ${commit.date}`
+					hint: formatHint(commit.author, commit.date)
 				};
 			}));
 		}
