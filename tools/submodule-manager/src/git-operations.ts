@@ -218,11 +218,22 @@ export async function getCommits(
 	return commits;
 }
 
+export async function getLatestRemoteCommit(submodulePath: string): Promise<Commit | null> {
+	const candidates = ['origin/HEAD', 'origin/main', 'origin/master', 'FETCH_HEAD'];
+	for (const ref of candidates) {
+		const commits = await getCommits(submodulePath, ref, 1);
+		if (commits.length > 0) return commits[0];
+	}
+	return null;
+}
+
 export async function checkoutCommit(
 	submodulePath: string,
 	commitHash: string
 ): Promise<GitResult> {
-	return executeGitCommand('git', ['checkout', commitHash], submodulePath);
+	const checkout = await executeGitCommand('git', ['checkout', commitHash], submodulePath);
+	if (!checkout.success) return checkout;
+	return executeGitCommand('git', ['submodule', 'update', '--init', '--recursive'], submodulePath);
 }
 
 export async function getCurrentBranch(submodulePath: string): Promise<string | null> {

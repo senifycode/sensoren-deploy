@@ -20,7 +20,7 @@ import {
 	getBranches,
 	getCommits,
 	checkoutCommit,
-	getCurrentBranch,
+	getLatestRemoteCommit,
 	addAndCommit,
 	pushToRemote,
 	getNonSubmoduleChanges,
@@ -82,23 +82,14 @@ async function main() {
 					continue;
 				}
 
-				const currentBranch = await getCurrentBranch(submodulePath);
-				if (!currentBranch) {
-					s.stop(pc.red(`${submodule.name}: Could not detect branch`));
-					failCount++;
-					continue;
-				}
+				s.message(`${submodule.name}: Getting latest remote commit...`);
 
-				s.message(`${submodule.name}: Getting latest commit from ${currentBranch}...`);
-
-				const commits = await getCommits(submodulePath, currentBranch, 1);
-				if (commits.length === 0) {
+				const latestCommit = await getLatestRemoteCommit(submodulePath);
+				if (!latestCommit) {
 					s.stop(pc.red(`${submodule.name}: No commits found`));
 					failCount++;
 					continue;
 				}
-
-				const latestCommit = commits[0];
 				s.message(`${submodule.name}: Checking out ${latestCommit.shortHash}...`);
 
 				const checkoutResult = await checkoutCommit(submodulePath, latestCommit.hash);
