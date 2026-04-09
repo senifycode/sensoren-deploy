@@ -2,12 +2,7 @@ version: '3.8'
 
 # Local development / feature testing compose
 # Usage: docker compose -f docker-compose.local.yml up --build
-#
-# Default test credentials (hardcoded for convenience):
-#   DB:    mysql://prisma:Prisma123!@db:3306/senify
-#   App:   http://localhost:3000
-#   MQTT:  localhost:1883  password: test1234
-#   Login: julian.haussmann@senify.de / (see seed.ts for hashed pw)
+# Copy .env.example to .env and adjust values before first run.
 
 networks:
   sensoren-network:
@@ -26,14 +21,14 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root1234
-      MYSQL_DATABASE: senify
-      MYSQL_USER: prisma
-      MYSQL_PASSWORD: Prisma123!
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-senify}
+      MYSQL_USER: ${MYSQL_USER:-prisma}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ./volumes/db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uprisma", "-pPrisma123!"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER:-prisma}", "-p${MYSQL_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -51,7 +46,7 @@ services:
     networks:
       - sensoren-network
     environment:
-      DATABASE_URL: mysql://prisma:Prisma123!@db:3306/senify
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -70,9 +65,11 @@ services:
     ports:
       - "8091:8091"
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
-      - WSS_RPC_PORT=8091
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - ORIGIN=${ORIGIN:-http://localhost:3000}
+      - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+      - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -91,15 +88,13 @@ services:
     ports:
       - "1883:1883"   # MQTT plaintext
       - "8883:8883"   # MQTT over TLS
-      - "8081:8081"   # gRPC
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
-      - MQTT_PASSWORD=test1234
-      - ENCRYPTION_KEY=localtestkey1234567890123456789012
-      - BROKER_RPC_PORT=8081
-      - WSS_RPC_HOST=websocket-service
-      - WSS_RPC_PORT=8091
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
+      - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+      - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
     volumes:
       - ./volumes/ssl:/ssl:ro
       - ./volumes/broker-data:/data
@@ -120,13 +115,11 @@ services:
     restart: unless-stopped
     networks:
       - sensoren-network
-    ports:
-      - "8101:8101"
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
-      - BACKUP_RPC_PORT=8101
-      - ENCRYPTION_KEY=localtestkey1234567890123456789012
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
     volumes:
       - ./volumes/backups:/backups
     depends_on:
@@ -147,22 +140,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - ORIGIN=http://localhost:3000
-      - NODE_ENV=development
-      - DATABASE_URL=mysql://prisma:Prisma123!@db:3306/senify
-      - BCRYPT_ROUNDS=10
+      - ORIGIN=${ORIGIN:-http://localhost:3000}
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-10}
       - IMG_STOREAGE_PATH=/images
-      - MQTT_PASSWORD=test1234
-      - MQTT_PORT=1883
-      - PLANE_API_KEY=
-      - ENCRYPTION_KEY=localtestkey1234567890123456789012
-      # gRPC endpoints (Docker service names)
-      - BROKER_RPC_HOST=broker-service
-      - BROKER_RPC_PORT=8081
-      - WSS_RPC_HOST=websocket-service
-      - WSS_RPC_PORT=8091
-      - BACKUP_RPC_HOST=backup-service
-      - BACKUP_RPC_PORT=8101
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - PLANE_API_KEY=${PLANE_API_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
+      - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
+      - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
+      - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
     volumes:
       - ./volumes/images:/images
     depends_on:
