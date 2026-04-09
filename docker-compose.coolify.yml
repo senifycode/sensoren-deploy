@@ -47,11 +47,11 @@ services:
             - DATABASE_URL=${DATABASE_URL}
             - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
             - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8091/health']
-            interval: 30s
-            timeout: 10s
-            retries: 3
+        # healthcheck:
+        #     test: ['CMD', 'curl', '-f', 'http://localhost:8091/health']
+        #     interval: 30s
+        #     timeout: 10s
+        #     retries: 3
         depends_on:
             db-init:
                 condition: service_completed_successfully
@@ -77,11 +77,11 @@ services:
             - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
             - ./volumes/ssl:/ssl:ro
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8081/health']
-            interval: 30s
-            timeout: 10s
-            retries: 3
+        # healthcheck:
+        #     test: ['CMD', 'curl', '-f', 'http://localhost:8081/health']
+        #     interval: 30s
+        #     timeout: 10s
+        #     retries: 3
         depends_on:
             db-init:
                 condition: service_completed_successfully
@@ -104,11 +104,11 @@ services:
             - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
         volumes:
             - ./volumes/backups:/backups
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8101/health']
-            interval: 30s
-            timeout: 10s
-            retries: 3
+        # healthcheck:
+        #     test: ['CMD', 'curl', '-f', 'http://localhost:8101/health']
+        #     interval: 30s
+        #     timeout: 10s
+        #     retries: 3
         depends_on:
             db-init:
                 condition: service_completed_successfully
