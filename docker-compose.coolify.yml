@@ -18,8 +18,6 @@ services:
             timeout: 5s
             retries: 10
             start_period: 30s
-        networks:
-            - senify-net
 
     db-init:
         build:
@@ -33,8 +31,6 @@ services:
             db:
                 condition: service_healthy
         exclude_from_hc: true
-        networks:
-            - senify-net
 
     websocket-service:
         build:
@@ -56,8 +52,6 @@ services:
             db-init:
                 condition: service_completed_successfully
         exclude_from_hc: true
-        networks:
-            - senify-net
 
     broker-service:
         build:
@@ -88,8 +82,6 @@ services:
             websocket-service:
                 condition: service_started
         exclude_from_hc: true
-        networks:
-            - senify-net
 
     backup-service:
         build:
@@ -113,8 +105,6 @@ services:
             db-init:
                 condition: service_completed_successfully
         exclude_from_hc: true
-        networks:
-            - senify-net
 
     sensoren-server:
         build:
@@ -153,9 +143,3 @@ services:
                 condition: service_started
             backup-service:
                 condition: service_started
-        networks:
-            - senify-net
-
-networks:
-    senify-net:
-        driver: bridge
