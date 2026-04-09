@@ -41,6 +41,7 @@ services:
         environment:
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
+            - ORIGIN=${ORIGIN:-https://sensore.senify.de}
             - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
             - WSS_SERVICE_URL=${WSS_SERVICE_URL:-http://websocket-service:8081}
         # healthcheck:
