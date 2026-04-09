@@ -291,10 +291,7 @@ export async function pushToRemote(deployRoot: string): Promise<GitResult> {
 	return executeGitCommand('git', ['push'], deployRoot);
 }
 
-export async function getNonSubmoduleChanges(
-	deployRoot: string,
-	submodules: Submodule[]
-): Promise<string[]> {
+async function getStatusPaths(deployRoot: string): Promise<string[]> {
 	const statusResult = await executeGitCommand(
 		'git',
 		['status', '--porcelain'],
@@ -305,42 +302,26 @@ export async function getNonSubmoduleChanges(
 		return [];
 	}
 
-	const submodulePaths = new Set(submodules.map((s) => s.path));
-	const nonSubmoduleChanges: string[] = [];
+	return statusResult.output
+		.split('\n')
+		.filter((l) => l.trim())
+		.map((line) => line.slice(3).trim().replace(/\/$/, ''));
+}
 
-	for (const line of statusResult.output.split('\n').filter((l) => l.trim())) {
-		const filePath = line.slice(3).trim();
-		if (!submodulePaths.has(filePath)) {
-			nonSubmoduleChanges.push(filePath);
-		}
-	}
-
-	return nonSubmoduleChanges;
+export async function getNonSubmoduleChanges(
+	deployRoot: string,
+	submodules: Submodule[]
+): Promise<string[]> {
+	const paths = await getStatusPaths(deployRoot);
+	const submodulePaths = new Set(submodules.map((s) => s.path.replace(/\/$/, '')));
+	return paths.filter((p) => !submodulePaths.has(p));
 }
 
 export async function getChangedSubmodules(
 	deployRoot: string,
 	submodules: Submodule[]
 ): Promise<string[]> {
-	const statusResult = await executeGitCommand(
-		'git',
-		['status', '--porcelain'],
-		deployRoot
-	);
-
-	if (!statusResult.success || !statusResult.output) {
-		return [];
-	}
-
-	const submodulePaths = new Set(submodules.map((s) => s.path));
-	const changed: string[] = [];
-
-	for (const line of statusResult.output.split('\n').filter((l) => l.trim())) {
-		const filePath = line.slice(3).trim();
-		if (submodulePaths.has(filePath)) {
-			changed.push(filePath);
-		}
-	}
-
-	return changed;
+	const paths = await getStatusPaths(deployRoot);
+	const submodulePaths = new Set(submodules.map((s) => s.path.replace(/\/$/, '')));
+	return paths.filter((p) => submodulePaths.has(p));
 }
