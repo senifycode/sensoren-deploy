@@ -66,7 +66,7 @@ services:
         environment:
             - NODE_ENV=${NODE_ENV:-production}
             - DATABASE_URL=${DATABASE_URL}
-            - MQTT_PASSWORD=${MQTT_PASSWORD}
+            - MQTT_PORT=${MQTT_PORT:-8843}
             - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
             - WSS_RPC_URL=${WSS_RPC_URL:-websocket-service:8091}
             - BACKUP_RPC_URL=${BACKUP_RPC_URL:-backup-service:8101}
