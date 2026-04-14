@@ -1,0 +1,20 @@
+{
+  "name": "service-manager",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Interactive CLI tool for managing services",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "node --import tsx index.ts",
+    "start": "node --import tsx index.ts"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.8.2",
+    "picocolors": "^1.1.1",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

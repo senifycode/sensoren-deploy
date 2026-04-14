@@ -30,3 +30,5 @@ volumes/broker-data/*
 Thumbs.db
 
 node_modules
+
+config.json

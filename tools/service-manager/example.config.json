@@ -1,0 +1,24 @@
+{
+  "services": {
+    "main": {
+      "name": "Main Service",
+      "path": "C:\\Coding\\Javascript\\Sensoren-Server"
+    },
+    "broker": {
+      "name": "Broker Service",
+      "path": "C:\\Coding\\Projects\\Senify\\broker-service"
+    },
+    "backup": {
+      "name": "Backup Service",
+      "path": "C:\\Coding\\Projects\\Senify\\backup-service"
+    },
+    "websocket": {
+      "name": "WebSocket Service",
+      "path": "C:\\Coding\\Projects\\Senify\\websocket-service"
+    },
+    "shared": {
+      "name": "Shared Utils",
+      "path": "C:\\Coding\\Projects\\Senify\\shared-utils"
+    }
+  }
+}
