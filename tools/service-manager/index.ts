@@ -139,6 +139,11 @@ async function pullService(serviceKey: ServiceKey): Promise<{ success: boolean; 
 		await runCommand('git', ['submodule', 'update', '--init', '--recursive'], service.path);
 		s.stop(pc.green('✓ Submodules updated successfully'));
 
+		// Install dependencies
+		s.start('Installing dependencies with bun...');
+		await runCommand('bun', ['install'], service.path);
+		s.stop(pc.green('✓ Dependencies installed successfully'));
+
 		console.log(pc.green(`✓ ${service.name} completed!`));
 		return { success: true, skipped: false };
 	} catch (error) {
