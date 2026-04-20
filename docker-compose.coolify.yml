@@ -65,6 +65,7 @@ services:
             - '8883:8883'
         environment:
             - NODE_ENV=${NODE_ENV:-production}
+            - ORIGIN=${ORIGIN:-https://sensore.senify.de}
             - DATABASE_URL=${DATABASE_URL}
             - MQTT_PORT=${MQTT_PORT:-8843}
             - BROKER_RPC_URL=${BROKER_RPC_URL:-broker-service:8081}
